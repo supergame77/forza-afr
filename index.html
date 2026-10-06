@@ -3,90 +3,274 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050607">
 <title>Forza AFR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600&family=Saira+Extra+Condensed:wght@600;800&display=swap">
 <style>
+:root{
+  --bg:#050607; --panel:#0D0F12; --line:#1C2026; --off:#171A1F; --mid:#3A4048;
+  --text:#F2F4F5; --mute:#8A939E;
+  --rich:#FF6A1A; --lean:#2E9BFF; --ok:#3FD3A0; --bad:#FF3B3B;
+  --num:'Saira Extra Condensed','Chakra Petch',system-ui,sans-serif;
+  --ui:'Chakra Petch',-apple-system,system-ui,sans-serif;
+}
 *{box-sizing:border-box}
-html,body{margin:0;background:#0D0E10;color:#ECEAE3;font-family:-apple-system,system-ui,sans-serif}
-body{padding:calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 20px);
-display:flex;flex-direction:column;gap:16px;min-height:100vh}
-.card{background:#15171A;border:1px solid #222428;border-radius:20px;padding:20px}
-.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.name{font-size:22px;font-weight:700}
-.pill{font-size:13px;padding:8px 14px;border-radius:18px;background:#17191C;border:1px solid #2A2D31;white-space:nowrap}
-.dot{display:inline-block;width:8px;height:8px;border-radius:4px;margin-right:6px;background:#777}
-.hero{text-align:center}
-.lbl{font-size:13px;color:#9BA1A8}
-#state{font-size:88px;font-weight:700;line-height:1.15}
-#en{font-size:14px;letter-spacing:.24em;min-height:18px}
-.wrap{position:relative;height:28px}
-.seg{display:flex;gap:3px;height:28px;border-radius:8px;overflow:hidden}
-.seg span:nth-child(1){flex:4;background:#6A3A1A}
-.seg span:nth-child(2){flex:2;background:#34373C}
-.seg span:nth-child(3){flex:4;background:#1C3D62}
-#mk{position:absolute;top:-6px;left:50%;width:10px;height:40px;margin-left:-5px;border-radius:4px;
-background:#fff;border:2px solid #15171A;transition:left .15s linear}
-.scale{display:flex;justify-content:space-between;font-size:13px;color:#9BA1A8;margin-top:12px}
-.v{font-size:40px;font-weight:700}
-#btn{height:56px;border:0;border-radius:14px;background:#ECEAE3;color:#0D0E10;font-size:17px;font-weight:600;
-font-family:inherit;cursor:pointer}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:var(--ui);
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+body{padding:calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 14px)
+  calc(env(safe-area-inset-bottom) + 14px) calc(env(safe-area-inset-left) + 14px)}
+.dash{display:flex;flex-direction:column;gap:12px;max-width:980px;margin:0 auto}
+
+/* แถบสถานะด้านบน */
+.strip{display:flex;justify-content:space-between;align-items:center;gap:10px;height:32px;
+  font-size:13px;letter-spacing:.12em;color:var(--mute)}
+.link{display:flex;align-items:center;gap:8px;min-width:96px}
+.link i{width:9px;height:9px;border-radius:50%;background:var(--bad);box-shadow:0 0 8px var(--bad)}
+.brand{color:var(--text);font-weight:600;letter-spacing:.2em}
+.hz{min-width:96px;text-align:right}
+.hz b{font-family:var(--num);font-size:20px;font-weight:600;color:var(--text);letter-spacing:0}
+
+.cols{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:700px){.cols{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}}
+.right{display:flex;flex-direction:column;gap:12px;min-width:0}
+
+/* แผงหลัก */
+.main{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 16px 16px;
+  display:flex;flex-direction:column;gap:10px}
+.bar{display:grid;grid-template-columns:repeat(31,minmax(0,1fr));gap:3px;height:36px;padding:0 4px}
+.bar i{background:var(--off);border-radius:2px;transform:skewX(-14deg)}
+.bar i.c{background:var(--mid)}
+.bar i.on.r{background:var(--rich);box-shadow:0 0 10px rgba(255,106,26,.55)}
+.bar i.on.l{background:var(--lean);box-shadow:0 0 10px rgba(46,155,255,.55)}
+.bar i.on.c{background:var(--text);box-shadow:0 0 10px rgba(242,244,245,.45)}
+.scale{display:flex;justify-content:space-between;font-size:12px;letter-spacing:.16em;color:var(--mute);padding:0 4px}
+.scale .r{color:var(--rich)} .scale .l{color:var(--lean)}
+.state{font-family:var(--num);font-weight:800;font-size:clamp(104px,34vw,176px);line-height:.92;
+  text-align:center;letter-spacing:.02em;margin-top:6px;color:var(--mid)}
+.sub{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  border-top:1px solid var(--line);padding-top:12px}
+.sub .th{font-size:18px;color:var(--mute)}
+.sub .volt{font-size:14px;color:var(--mute)}
+.sub .volt b{font-family:var(--num);font-weight:600;font-size:44px;color:var(--text);margin-right:4px}
+
+/* กราฟสด */
+.trace{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px 14px}
+.ph{display:flex;justify-content:space-between;font-size:12px;color:var(--mute);margin-bottom:8px}
+canvas{display:block;width:100%;height:150px}
+
+/* ช่องตัวเลข */
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px 12px;
+  display:flex;flex-direction:column;gap:2px}
+.tile .k{font-size:12px;color:var(--mute)}
+.tile .n{font-family:var(--num);font-weight:600;font-size:40px;line-height:1}
+.tile .u{font-size:12px;color:var(--mute);margin-left:6px;font-family:var(--ui)}
+
+/* หน้าต่างเชื่อมต่อ */
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:rgba(5,6,7,.84);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:10}
+.overlay[hidden]{display:none}
+.ovbox{width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px;text-align:center}
+.ovt{font-family:var(--num);font-weight:800;font-size:56px;letter-spacing:.04em;line-height:1}
+#msg{margin:0;font-size:15px;line-height:1.6;color:var(--mute)}
+#btn{height:56px;border:0;border-radius:12px;background:var(--rich);color:#140800;font-family:var(--ui);
+  font-size:18px;font-weight:600;cursor:pointer}
 #btn:disabled{opacity:.5}
-#btn[hidden]{display:none}
-#btn:focus-visible{outline:3px solid #4DA3FF;outline-offset:3px}
-#msg{font-size:14px;line-height:1.6;color:#9BA1A8;text-align:center;min-height:20px}
-@media (prefers-reduced-motion:reduce){#mk{transition:none}}
+#btn:focus-visible{outline:3px solid var(--lean);outline-offset:3px}
 </style>
 </head>
 <body>
-<div class="top">
-  <span class="name">Forza AFR</span>
-  <span class="pill"><span class="dot" id="dot"></span><span id="conn">ยังไม่ได้เชื่อมต่อ</span></span>
-</div>
-<div class="card hero">
-  <div class="lbl">สถานะส่วนผสม</div>
-  <div id="state">--</div>
-  <div id="en" class="lbl"></div>
-</div>
-<div class="card">
-  <div class="wrap">
-    <div class="seg"><span></span><span></span><span></span></div>
-    <div id="mk"></div>
+<div class="dash">
+  <header class="strip">
+    <span class="link"><i id="dot"></i><span id="conn">OFFLINE</span></span>
+    <span class="brand">FORZA AFR</span>
+    <span class="hz"><b id="hz">0</b> Hz</span>
+  </header>
+
+  <div class="cols">
+    <section class="main">
+      <div class="bar" id="bar" aria-hidden="true"></div>
+      <div class="scale"><span class="r">RICH</span><span>14.7</span><span class="l">LEAN</span></div>
+      <div class="state" id="state">----</div>
+      <div class="sub">
+        <span class="th" id="th">รอเชื่อมต่อ</span>
+        <span class="volt"><b id="volt">0.00</b>V</span>
+      </div>
+    </section>
+
+    <div class="right">
+      <section class="trace">
+        <div class="ph"><span>O2 สด 5 วินาทีล่าสุด</span><span>เส้นประ = 14.7</span></div>
+        <canvas id="cv" aria-label="กราฟแรงดัน O2 ย้อนหลัง 5 วินาที"></canvas>
+      </section>
+      <section class="tiles">
+        <div class="tile"><span class="k">เฉลี่ย 3 วินาที</span><span class="n"><span id="avg">0.00</span><span class="u">V</span></span></div>
+        <div class="tile"><span class="k">สลับหนา/บาง</span><span class="n"><span id="sw">0.0</span><span class="u">ครั้ง/วิ</span></span></div>
+        <div class="tile"><span class="k">เวลาที่หนา (10 วิ)</span><span class="n"><span id="rp">0</span><span class="u">%</span></span></div>
+        <div class="tile"><span class="k">ช่วงแกว่ง 3 วินาที</span><span class="n"><span id="span">0.00</span><span class="u">V</span></span></div>
+      </section>
+    </div>
   </div>
-  <div class="scale"><span style="color:#FF8A3D">หนา</span><span>14.7</span><span style="color:#4DA3FF">บาง</span></div>
 </div>
-<div class="card">
-  <div class="lbl">แรงดัน O2</div>
-  <span class="v" id="volt">0.00</span> <span class="lbl">V</span>
+
+<div class="overlay" id="ov">
+  <div class="ovbox">
+    <div class="ovt">FORZA AFR</div>
+    <p id="msg">กดเชื่อมต่อ แล้วเลือก Forza-AFR ในรายการ</p>
+    <button id="btn" type="button">เชื่อมต่อ</button>
+  </div>
 </div>
-<button id="btn" type="button">เชื่อมต่อ Forza-AFR</button>
-<div id="msg"></div>
+
 <script>
-// ต้องตรงกับในโค้ด ESP32
+// ---------- ต้องตรงกับในโค้ด ESP32 ----------
 const SERVICE_UUID = 'a3f1e000-7b2c-4d1e-9c8a-5f0e2b6d4a10';
 const O2_CHAR_UUID = 'a3f1e001-7b2c-4d1e-9c8a-5f0e2b6d4a10';
-const RICH_V = 0.58;   // สูงกว่านี้ = หนา
-const LEAN_V = 0.42;   // ต่ำกว่านี้ = บาง
+const RICH_V = 0.58;    // สูงกว่านี้ = หนา
+const LEAN_V = 0.42;    // ต่ำกว่านี้ = บาง
+const MID_V  = 0.45;    // จุดแบ่งหนา/บาง ของ O2
+// -------------------------------------------
 
-let device = null;
-let o2Char = null;
-let running = false;
-const decoder = new TextDecoder();
+const SEGS = 31, CENTER = 15, TRACE_MS = 5000, KEEP_MS = 10000;
 const $ = id => document.getElementById(id);
+const decoder = new TextDecoder();
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-function setStatus(text, color) {
-  $('conn').textContent = text;
-  $('dot').style.background = color;
+let device = null, o2Char = null, running = false, wakeLock = null;
+let latest = null;
+const samples = [];
+let readCount = 0, hzT = performance.now(), statT = 0;
+
+// สร้างแถบไฟ 31 ช่อง
+const segs = [];
+for (let i = 0; i < SEGS; i++) {
+  const s = document.createElement('i');
+  s.className = i < CENTER ? 'r' : (i > CENTER ? 'l' : 'c');
+  $('bar').appendChild(s);
+  segs.push(s);
 }
 
-function show(v) {
-  let th, en, c;
-  if (v >= RICH_V)      { th = 'หนา'; en = 'RICH';   c = '#FF8A3D'; }
-  else if (v > LEAN_V)  { th = '14.7'; en = 'STOICH'; c = '#ECEAE3'; }
-  else                  { th = 'บาง'; en = 'LEAN';   c = '#4DA3FF'; }
-  $('state').textContent = th; $('state').style.color = c;
-  $('en').textContent = en;    $('en').style.color = c;
-  const p = Math.min(1, Math.max(0, (0.9 - v) / 0.8)) * 100;
-  $('mk').style.left = p + '%';
+function classify(v) {
+  if (v >= RICH_V) return { en: 'RICH', th: 'หนา', c: 'var(--rich)' };
+  if (v > LEAN_V)  return { en: '14.7', th: 'ใกล้ 14.7', c: 'var(--text)' };
+  return { en: 'LEAN', th: 'บาง', c: 'var(--lean)' };
+}
+const pos = v => Math.min(1, Math.max(0, (0.9 - v) / 0.8));   // 0 = หนาสุด, 1 = บางสุด
+
+// ---------- วาดหน้าจอ ----------
+let lastIdx = -1, lastEn = '';
+function renderLive(v) {
+  const idx = Math.round(pos(v) * (SEGS - 1));
+  if (idx !== lastIdx) {
+    for (let i = 0; i < SEGS; i++) {
+      const on = idx <= CENTER ? (i >= idx && i <= CENTER) : (i >= CENTER && i <= idx);
+      segs[i].classList.toggle('on', on);
+    }
+    lastIdx = idx;
+  }
+  const s = classify(v);
+  if (s.en !== lastEn) {
+    $('state').textContent = s.en;
+    $('state').style.color = s.c;
+    $('th').textContent = s.th;
+    lastEn = s.en;
+  }
   $('volt').textContent = v.toFixed(2);
+}
+
+function renderStats(now) {
+  while (samples.length && now - samples[0].t > KEEP_MS) samples.shift();
+  let sum = 0, n = 0, mn = 9, mx = -9, richN = 0, flips = 0, prev = 0;
+  for (const s of samples) {
+    const age = now - s.t;
+    if (s.v >= MID_V) richN++;
+    if (age <= 3000) { sum += s.v; n++; if (s.v < mn) mn = s.v; if (s.v > mx) mx = s.v; }
+    if (age <= 5000) {
+      const side = s.v >= RICH_V ? 1 : (s.v <= LEAN_V ? -1 : 0);
+      if (side !== 0) { if (prev !== 0 && side !== prev) flips++; prev = side; }
+    }
+  }
+  $('avg').textContent  = n ? (sum / n).toFixed(2) : '0.00';
+  $('span').textContent = n ? (mx - mn).toFixed(2) : '0.00';
+  $('sw').textContent   = (flips / 5).toFixed(1);
+  $('rp').textContent   = samples.length ? Math.round(richN * 100 / samples.length) : 0;
+}
+
+const cv = $('cv'), ctx = cv.getContext('2d');
+function sizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = Math.round(cv.clientWidth * dpr);
+  cv.height = Math.round(cv.clientHeight * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', sizeCanvas);
+sizeCanvas();
+
+function drawTrace(now) {
+  const w = cv.clientWidth, h = cv.clientHeight;
+  const y = v => h - Math.min(1, Math.max(0, v)) * h;   // สเกล 0–1V
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = 'rgba(255,106,26,.09)'; ctx.fillRect(0, 0, w, y(RICH_V));
+  ctx.fillStyle = 'rgba(46,155,255,.09)'; ctx.fillRect(0, y(LEAN_V), w, h - y(LEAN_V));
+  ctx.strokeStyle = '#3A4048'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(0, y(MID_V)); ctx.lineTo(w, y(MID_V)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  let started = false;
+  for (const s of samples) {
+    const age = now - s.t;
+    if (age > TRACE_MS) continue;
+    const x = w - (age / TRACE_MS) * w;
+    if (!started) { ctx.moveTo(x, y(s.v)); started = true; } else ctx.lineTo(x, y(s.v));
+  }
+  ctx.strokeStyle = '#F2F4F5'; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+  if (latest !== null) {
+    ctx.fillStyle = latest >= RICH_V ? '#FF6A1A' : (latest <= LEAN_V ? '#2E9BFF' : '#F2F4F5');
+    ctx.beginPath(); ctx.arc(w - 4, y(latest), 4, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function frame(now) {
+  if (latest !== null) {
+    renderLive(latest);
+    drawTrace(now);
+    if (now - statT > 250) { statT = now; renderStats(now); }
+  }
+  if (now - hzT >= 1000) {
+    $('hz').textContent = Math.round(readCount * 1000 / (now - hzT));
+    readCount = 0; hzT = now;
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ---------- Bluetooth ----------
+function setLink(ok) {
+  $('conn').textContent = ok ? 'LINK' : 'OFFLINE';
+  const c = ok ? 'var(--ok)' : 'var(--bad)';
+  $('dot').style.background = c;
+  $('dot').style.boxShadow = '0 0 8px ' + c;
+}
+
+async function keepAwake() {
+  try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && running) keepAwake();
+});
+
+async function readLoop() {
+  // อ่านค่าต่อเนื่องเร็วที่สุดเท่าที่ Bluetooth ทำได้
+  while (running) {
+    try {
+      const data = await o2Char.readValue();
+      const v = parseFloat(decoder.decode(data));
+      if (!isNaN(v)) { samples.push({ t: performance.now(), v }); latest = v; readCount++; }
+    } catch (e) {
+      await sleep(30);
+    }
+  }
 }
 
 async function connect() {
@@ -95,8 +279,7 @@ async function connect() {
     return;
   }
   $('btn').disabled = true;
-  $('msg').textContent = '';
-  setStatus('กำลังเชื่อมต่อ', '#E0A43A');
+  $('msg').textContent = 'กำลังเชื่อมต่อ…';
   try {
     if (!device) {
       device = await navigator.bluetooth.requestDevice({
@@ -108,37 +291,26 @@ async function connect() {
     const server = await device.gatt.connect();
     const service = await server.getPrimaryService(SERVICE_UUID);
     o2Char = await service.getCharacteristic(O2_CHAR_UUID);
-    setStatus('เชื่อมต่อแล้ว', '#7FD1AE');
-    $('btn').hidden = true;
+    setLink(true);
+    $('ov').hidden = true;
+    sizeCanvas();
+    keepAwake();
     running = true;
-    poll();
+    readLoop();
   } catch (e) {
-    setStatus('ยังไม่ได้เชื่อมต่อ', '#777');
     $('btn').disabled = false;
     $('msg').textContent = 'เชื่อมต่อไม่สำเร็จ ตรวจว่า ESP32 มีไฟเข้า แล้วกดเชื่อมต่ออีกครั้ง';
-  }
-}
-
-async function poll() {
-  while (running) {
-    try {
-      const data = await o2Char.readValue();
-      const v = parseFloat(decoder.decode(data));
-      if (!isNaN(v)) show(v);
-    } catch (e) {
-      // อ่านพลาดบางครั้งไม่เป็นไร รอบถัดไปจะอ่านใหม่
-    }
-    await new Promise(r => setTimeout(r, 200));   // อัปเดต 5 ครั้งต่อวินาที
   }
 }
 
 function onLost() {
   running = false;
   o2Char = null;
-  setStatus('หลุดการเชื่อมต่อ', '#E5484D');
+  setLink(false);
+  $('msg').textContent = 'หลุดการเชื่อมต่อ กดเพื่อเชื่อมต่อใหม่';
   $('btn').textContent = 'เชื่อมต่ออีกครั้ง';
-  $('btn').hidden = false;
   $('btn').disabled = false;
+  $('ov').hidden = false;
 }
 
 $('btn').addEventListener('click', connect);
