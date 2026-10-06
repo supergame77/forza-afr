@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Forza AFR</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;background:#0D0E10;color:#ECEAE3;font-family:-apple-system,system-ui,sans-serif}
+body{padding:calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 20px);
+display:flex;flex-direction:column;gap:16px;min-height:100vh}
+.card{background:#15171A;border:1px solid #222428;border-radius:20px;padding:20px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.name{font-size:22px;font-weight:700}
+.pill{font-size:13px;padding:8px 14px;border-radius:18px;background:#17191C;border:1px solid #2A2D31;white-space:nowrap}
+.dot{display:inline-block;width:8px;height:8px;border-radius:4px;margin-right:6px;background:#777}
+.hero{text-align:center}
+.lbl{font-size:13px;color:#9BA1A8}
+#state{font-size:88px;font-weight:700;line-height:1.15}
+#en{font-size:14px;letter-spacing:.24em;min-height:18px}
+.wrap{position:relative;height:28px}
+.seg{display:flex;gap:3px;height:28px;border-radius:8px;overflow:hidden}
+.seg span:nth-child(1){flex:4;background:#6A3A1A}
+.seg span:nth-child(2){flex:2;background:#34373C}
+.seg span:nth-child(3){flex:4;background:#1C3D62}
+#mk{position:absolute;top:-6px;left:50%;width:10px;height:40px;margin-left:-5px;border-radius:4px;
+background:#fff;border:2px solid #15171A;transition:left .15s linear}
+.scale{display:flex;justify-content:space-between;font-size:13px;color:#9BA1A8;margin-top:12px}
+.v{font-size:40px;font-weight:700}
+#btn{height:56px;border:0;border-radius:14px;background:#ECEAE3;color:#0D0E10;font-size:17px;font-weight:600;
+font-family:inherit;cursor:pointer}
+#btn:disabled{opacity:.5}
+#btn[hidden]{display:none}
+#btn:focus-visible{outline:3px solid #4DA3FF;outline-offset:3px}
+#msg{font-size:14px;line-height:1.6;color:#9BA1A8;text-align:center;min-height:20px}
+@media (prefers-reduced-motion:reduce){#mk{transition:none}}
+</style>
+</head>
+<body>
+<div class="top">
+  <span class="name">Forza AFR</span>
+  <span class="pill"><span class="dot" id="dot"></span><span id="conn">ยังไม่ได้เชื่อมต่อ</span></span>
+</div>
+<div class="card hero">
+  <div class="lbl">สถานะส่วนผสม</div>
+  <div id="state">--</div>
+  <div id="en" class="lbl"></div>
+</div>
+<div class="card">
+  <div class="wrap">
+    <div class="seg"><span></span><span></span><span></span></div>
+    <div id="mk"></div>
+  </div>
+  <div class="scale"><span style="color:#FF8A3D">หนา</span><span>14.7</span><span style="color:#4DA3FF">บาง</span></div>
+</div>
+<div class="card">
+  <div class="lbl">แรงดัน O2</div>
+  <span class="v" id="volt">0.00</span> <span class="lbl">V</span>
+</div>
+<button id="btn" type="button">เชื่อมต่อ Forza-AFR</button>
+<div id="msg"></div>
+<script>
+// ต้องตรงกับในโค้ด ESP32
+const SERVICE_UUID = 'a3f1e000-7b2c-4d1e-9c8a-5f0e2b6d4a10';
+const O2_CHAR_UUID = 'a3f1e001-7b2c-4d1e-9c8a-5f0e2b6d4a10';
+const RICH_V = 0.58;   // สูงกว่านี้ = หนา
+const LEAN_V = 0.42;   // ต่ำกว่านี้ = บาง
+
+let device = null;
+let o2Char = null;
+let running = false;
+const decoder = new TextDecoder();
+const $ = id => document.getElementById(id);
+
+function setStatus(text, color) {
+  $('conn').textContent = text;
+  $('dot').style.background = color;
+}
+
+function show(v) {
+  let th, en, c;
+  if (v >= RICH_V)      { th = 'หนา'; en = 'RICH';   c = '#FF8A3D'; }
+  else if (v > LEAN_V)  { th = '14.7'; en = 'STOICH'; c = '#ECEAE3'; }
+  else                  { th = 'บาง'; en = 'LEAN';   c = '#4DA3FF'; }
+  $('state').textContent = th; $('state').style.color = c;
+  $('en').textContent = en;    $('en').style.color = c;
+  const p = Math.min(1, Math.max(0, (0.9 - v) / 0.8)) * 100;
+  $('mk').style.left = p + '%';
+  $('volt').textContent = v.toFixed(2);
+}
+
+async function connect() {
+  if (!navigator.bluetooth) {
+    $('msg').textContent = 'เบราว์เซอร์นี้ใช้ Bluetooth ไม่ได้ ให้เปิดหน้านี้ในแอพ Bluefy';
+    return;
+  }
+  $('btn').disabled = true;
+  $('msg').textContent = '';
+  setStatus('กำลังเชื่อมต่อ', '#E0A43A');
+  try {
+    if (!device) {
+      device = await navigator.bluetooth.requestDevice({
+        filters: [{ namePrefix: 'Forza' }],
+        optionalServices: [SERVICE_UUID]
+      });
+      device.addEventListener('gattserverdisconnected', onLost);
+    }
+    const server = await device.gatt.connect();
+    const service = await server.getPrimaryService(SERVICE_UUID);
+    o2Char = await service.getCharacteristic(O2_CHAR_UUID);
+    setStatus('เชื่อมต่อแล้ว', '#7FD1AE');
+    $('btn').hidden = true;
+    running = true;
+    poll();
+  } catch (e) {
+    setStatus('ยังไม่ได้เชื่อมต่อ', '#777');
+    $('btn').disabled = false;
+    $('msg').textContent = 'เชื่อมต่อไม่สำเร็จ ตรวจว่า ESP32 มีไฟเข้า แล้วกดเชื่อมต่ออีกครั้ง';
+  }
+}
+
+async function poll() {
+  while (running) {
+    try {
+      const data = await o2Char.readValue();
+      const v = parseFloat(decoder.decode(data));
+      if (!isNaN(v)) show(v);
+    } catch (e) {
+      // อ่านพลาดบางครั้งไม่เป็นไร รอบถัดไปจะอ่านใหม่
+    }
+    await new Promise(r => setTimeout(r, 200));   // อัปเดต 5 ครั้งต่อวินาที
+  }
+}
+
+function onLost() {
+  running = false;
+  o2Char = null;
+  setStatus('หลุดการเชื่อมต่อ', '#E5484D');
+  $('btn').textContent = 'เชื่อมต่ออีกครั้ง';
+  $('btn').hidden = false;
+  $('btn').disabled = false;
+}
+
+$('btn').addEventListener('click', connect);
+</script>
+</body>
+</html>
