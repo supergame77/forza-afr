@@ -120,8 +120,9 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--lean);outl
 canvas{display:block;width:100%;height:200px}
 
 /* CAN */
-.canbar{display:flex;flex-wrap:wrap;gap:8px}
-.chip{flex:1 1 90px;padding:8px 12px;border-radius:10px}
+.canbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (min-width:720px){.canbar{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.chip{padding:8px 12px;border-radius:10px;min-width:0}
 .chip b{display:block;font-family:var(--num);font-weight:600;font-size:26px;line-height:1.1}
 .tools{display:flex;flex-wrap:wrap;gap:8px}
 .btn{height:44px;padding:0 16px;border:1px solid var(--line);border-radius:10px;background:var(--panel);
@@ -206,8 +207,12 @@ td.hz{text-align:right;padding-right:10px;color:var(--mute)}
         <div class="panel tile"><span class="k">O2 สาย</span><span class="v"><b id="o2w" class="na">--</b><span class="u">V</span></span></div>
         <div class="panel tile"><span class="k">O2 จาก CAN</span><span class="v"><b id="o2c" class="na">--</b><span class="u">V</span></span></div>
         <div class="panel tile"><span class="k">เวลาที่หนา</span><span class="v"><b id="rp1" class="na">--</b><span class="u">%</span></span></div>
+        <div class="panel tile"><span class="k">ปรับน้ำมันสั้น</span><span class="v"><b id="stft" class="na">--</b><span class="u">%</span></span></div>
+        <div class="panel tile"><span class="k">ปรับน้ำมันยาว</span><span class="v"><b id="ltft" class="na">--</b><span class="u">%</span></span></div>
+        <div class="panel tile"><span class="k">OBD ตอบ</span><span class="v"><b id="obdq" class="na">--</b><span class="u">/วิ</span></span></div>
       </div>
       <div class="tiles" id="extra"></div>
+      <p class="hint">ปรับน้ำมัน (fuel trim) ค่าบวก = กล่องเติมน้ำมันเพิ่มเพราะเจอส่วนผสมบาง ค่าลบ = กล่องลดน้ำมันเพราะเจอส่วนผสมหนา</p>
     </div>
   </section>
 
@@ -241,7 +246,9 @@ td.hz{text-align:right;padding-right:10px;color:var(--mute)}
       <div class="panel chip"><span class="k">ความเร็ว bus</span><b id="ckb" class="na">--</b></div>
       <div class="panel chip"><span class="k">เฟรม/วินาที</span><b id="cfps" class="na">--</b></div>
       <div class="panel chip"><span class="k">จำนวน ID</span><b id="cids" class="na">0</b></div>
+      <div class="panel chip"><span class="k">สัญญาณเสีย/วินาที</span><b id="cerr" class="na">--</b></div>
     </div>
+    <p class="hint" id="obdinfo" hidden></p>
     <div class="tools">
       <button type="button" class="btn" id="pause" aria-pressed="false">หยุดชั่วคราว</button>
       <button type="button" class="btn" id="onlychg" aria-pressed="false">เฉพาะที่เปลี่ยน</button>
@@ -278,9 +285,10 @@ const RPM_MAX = 9000, RPM_WARN = 7000, RPM_SHIFT = 8000;
 // -----------------------------
 
 const SEGS = 31, CENTER = 15, RSEGS = 30, TRACE_MS = 5000, KEEP_MS = 10000;
-const KNOWN = new Set(['r', 's', 't', 'i', 'b', 'p', 'm', 'o', 'c', 'f']);
+const KNOWN = new Set(['r', 's', 't', 'i', 'b', 'p', 'm', 'o', 'j', 'k', 'q', 'c', 'f', 'e', 'a', 'n']);
 const FIELDS = [['rpm', 'r', 0], ['spd', 's', 0], ['tmp', 't', 0], ['iat', 'i', 0],
-                ['bat', 'b', 1], ['tps', 'p', 0], ['map', 'm', 0], ['o2c', 'o', 2]];
+                ['bat', 'b', 1], ['tps', 'p', 0], ['map', 'm', 0], ['o2c', 'o', 2],
+                ['stft', 'j', 1], ['ltft', 'k', 1], ['obdq', 'q', 0]];
 const $ = id => document.getElementById(id);
 const decoder = new TextDecoder();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -570,10 +578,27 @@ function renderCan(now) {
   $('cids').textContent = can.size;
   $('cids').classList.toggle('na', can.size === 0);
 
+  const err = running ? live.e : undefined;
+  const obd = running && live.a === 1;
+  showVal('cerr', err, 0);
+  $('cerr').style.color = !obd && has(err) && err > 0 && canKbps === 0 ? 'var(--warn)' : '';
+  const oi = $('obdinfo');
+  oi.hidden = !obd;
+  if (obd) {
+    oi.textContent = canKbps > 0
+      ? 'โหมด OBD: เจอกล่อง ECU แล้ว รองรับ ' + (live.n || 0) + ' ค่า ตอบ ' + (live.q || 0) + ' ครั้ง/วิ'
+      : 'โหมด OBD: กำลังส่งคำถามหากล่อง ECU (ลอง 500K และ 250K)…';
+  }
+
   $('cempty').hidden = can.size > 0;
   if (can.size === 0) {
-    $('cempty').textContent = !running ? 'กดเชื่อมต่อ แล้วเปิดกุญแจรถ ข้อมูลทุก ID จะขึ้นที่นี่'
-      : (canKbps > 0 ? 'รอข้อมูล…' : 'ยังไม่เจอข้อมูล CAN: เปิดกุญแจรถ ตรวจสาย CANH/CANL และกราวด์');
+    let m = 'กดเชื่อมต่อ แล้วเปิดกุญแจรถ ข้อมูลทุก ID จะขึ้นที่นี่';
+    if (running && canKbps > 0) m = 'รอข้อมูล…';
+    else if (obd) m = 'ยังไม่มีกล่องตอบ: เปิดกุญแจหรือติดเครื่อง เช็กสายขาว→CANH, ฟ้า→CANL, เขียว→GND ที่ปลั๊ก DLC, สาย TX→G5, RX→G4 และตัวต้านทาน 120 โอห์มที่โมดูล';
+    else if (running && !has(err)) m = 'ยังไม่เจอข้อมูล CAN: เปิดกุญแจรถ ตรวจสาย CANH/CANL และกราวด์';
+    else if (running && err > 0) m = 'มีสัญญาณเข้ามาแต่อ่านไม่ออก: ลองสลับสาย CANH กับ CANL ที่โมดูล';
+    else if (running) m = 'ไม่มีสัญญาณเข้ามาเลย: สายอาจไม่ได้แตะสาย CAN จริง ให้วัดยืนยัน 60 โอห์ม และเช็กว่าขา RX ของโมดูลไปที่ G4';
+    $('cempty').textContent = m;
   }
 
   const list = [...can.entries()];
